@@ -1,13 +1,14 @@
 #pragma once
 
 #include <memory>
-#include "POP3Command.h"
-#include "POP3Status.h"
+#include <atomic>
+
 #include <boost/asio.hpp>
 #include <boost/lexical_cast.hpp>
-#include <MailboxServiceManager.h>
-#include <atomic>
-#include <assert.h>
+
+#include "POP3Command.h"
+#include "Enums.h"
+#include "Mailbox.h"
 
 //using namespace boost::asio;
 
@@ -68,17 +69,11 @@ class POP3Session : public std::enable_shared_from_this<POP3Session>
 {
 public:
 
-	explicit POP3Session(boost::asio::ip::tcp::socket socket,
-		std::shared_ptr<MailboxServiceManager> mailboxServManager) :
-		sessionId{ counter++ },
-		socket{ std::move(socket) }, mailboxServManager{ mailboxServManager },
-		mailbox{}
-	{
+	explicit POP3Session(boost::asio::ip::tcp::socket socket) : sessionId{ counter++ }, socket{ std::move(socket) }, mailbox{} {
 		//nothing
 	}
 
-	static std::shared_ptr<POP3Session> createSession(boost::asio::ip::tcp::socket socket,
-		std::shared_ptr<MailboxServiceManager> manager);
+	static std::shared_ptr<POP3Session> createSession(boost::asio::ip::tcp::socket socket);
 
 	void read() {
 		boost::asio::async_read_until(socket, boost::asio::dynamic_buffer(request), "\r\n", 
@@ -118,7 +113,7 @@ public:
 	~POP3Session() {
 		if (mailbox) {
 			// need to set free
-			mailboxServManager->releaseMailbox(mailbox->getName());
+			//mailboxServManager->releaseMailbox(mailbox->getName());
 		}
 	}
 
@@ -155,8 +150,7 @@ private:
 	std::string userName;
 	std::string password;
 	bool quitCommandReceived{ false };
-	std::shared_ptr<MailboxServiceManager> mailboxServManager;
-	MailboxServiceManager::Mailbox_Ptr mailbox;
+	mailbox_ptr mailbox;
 	static std::atomic<std::size_t> counter;
 	std::size_t sessionId;
 };

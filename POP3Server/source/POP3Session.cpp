@@ -1,14 +1,18 @@
 
 #include "POP3Session.h"
+#include "POP3Status.h"
+#include "MailboxServiceManager.h"
+
+#include <assert.h>
+#include <variant>
 
 std::atomic<std::size_t> POP3Session::counter = 0;
 std::list<std::shared_ptr<POP3Session>> POP3Session::sessions;
 std::mutex POP3Session::m_mutex;
 
-std::shared_ptr<POP3Session> POP3Session::createSession(boost::asio::ip::tcp::socket socket,
-	std::shared_ptr<MailboxServiceManager> manager) {
+std::shared_ptr<POP3Session> POP3Session::createSession(boost::asio::ip::tcp::socket socket) {
 
-	auto session = std::make_shared<POP3Session>(std::move(socket), manager);
+	auto session = std::make_shared<POP3Session>(std::move(socket));
 
 	{
 		std::lock_guard<std::mutex> lg{ m_mutex };
@@ -58,7 +62,7 @@ void POP3Session::handleAnonymousCommand(const POP3Command& cmd) {
 	{
 	case POP3CommandType::USER: {
 		auto username = std::get<std::string>(cmd.parameter);
-		if (!mailboxServManager->isUserRegistered(username)) {
+		if (!MailboxServiceManager::IsUserRegistered(username)) {
 			setErrorResponse(POP3SessionError::MailboxNotFound);
 		}
 		else {
@@ -72,9 +76,9 @@ void POP3Session::handleAnonymousCommand(const POP3Command& cmd) {
 	}
 	case POP3CommandType::PASS: {
 		auto pass = std::get<std::string>(cmd.parameter);
-		auto result = mailboxServManager->connect(userName, pass);
-		if (std::holds_alternative<MailboxServiceManager::Mailbox_Ptr>(result)) {
-			mailbox = std::move(std::get<MailboxServiceManager::Mailbox_Ptr>(result));
+		auto result = MailboxServiceManager::connect(userName, pass);
+		if (std::holds_alternative<mailbox_ptr>(result)) {
+			mailbox = std::move(std::get<mailbox_ptr>(result));
 			state = POP3SessionState::Transaction;
 			putMailboxInfoToReponse();
 		}

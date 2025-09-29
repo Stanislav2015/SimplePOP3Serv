@@ -13,6 +13,10 @@ using namespace boost::asio;
 
 int main()
 {
+	//TODO: Реализовать полноценную фабрику
+	std::shared_ptr<UserManager> userManager{ new DummyUserManager() };
+	MailboxServiceManager::SetUserManager(userManager);
+
 	try {
 		io_context io_context;
 		std::string addr = "127.0.0.1";

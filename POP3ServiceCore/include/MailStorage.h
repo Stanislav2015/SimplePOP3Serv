@@ -77,3 +77,6 @@ protected:
 	bool deleteAll{ false };
 	std::vector<std::size_t> emailsToBeDeleted;
 };
+
+
+using storage_ptr = std::shared_ptr<MailStorage>;

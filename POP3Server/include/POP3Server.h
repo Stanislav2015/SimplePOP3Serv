@@ -10,8 +10,7 @@
 
 class POP3Server {
 public:
-	POP3Server(std::shared_ptr<MailboxServiceManager> manager, boost::asio::ip::tcp::acceptor acceptor) : 
-		manager(manager), acceptor(std::move(acceptor))
+	POP3Server(boost::asio::ip::tcp::acceptor acceptor) : acceptor(std::move(acceptor))
 	{
 	}
 
@@ -25,7 +24,7 @@ public:
 				if (ec) {
 					return;
 				}
-				auto session = POP3Session::createSession(std::move(socket), manager);
+				auto session = POP3Session::createSession(std::move(socket));
 				session->read();
 			});
 	}
@@ -36,7 +35,6 @@ public:
 	}
 
 private:
-	std::shared_ptr<MailboxServiceManager> manager;
 	boost::asio::ip::tcp::acceptor acceptor;
 };
 
@@ -45,17 +43,14 @@ public:
 	POP3ServerBuilder(std::string _addr, int port_num) : addr(_addr), port_number(port_num) {}
 
 	POP3Server build(boost::asio::io_context &context) {
-		//TODO: Реализовать полноценную фабрику
-		std::shared_ptr<UserManager> userManager{ new DummyUserManager() };
-		std::shared_ptr<MailboxServiceManager> mailboxServiceManager = std::make_shared<MailboxServiceManager>(userManager);
 		if (!addr.empty()) {
 			auto adr = boost::asio::ip::make_address(addr);
 			boost::asio::ip::tcp::acceptor acceptor(context, boost::asio::ip::tcp::endpoint(adr, port_number));
-			return POP3Server(mailboxServiceManager, std::move(acceptor));
+			return POP3Server(std::move(acceptor));
 		}
 		else {
 			boost::asio::ip::tcp::acceptor acceptor(context, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port_number));
-			return POP3Server(mailboxServiceManager, std::move(acceptor));
+			return POP3Server(std::move(acceptor));
 		}
 	}
 private:

@@ -7,17 +7,18 @@
 #include <optional>
 #include <algorithm>
 #include <functional>
+
 #include "MailStorage.h"
 #include "Enums.h"
+#include <MailboxLock.h>
 
 class Mailbox
 {
 public:
-	using storage_ptr = std::shared_ptr<MailStorage>;
-
-	Mailbox(std::string mailboxName, std::vector<storage_ptr> storages) : 
-		name{ std::move(mailboxName) }, storages{ std::move(storages) }
+	Mailbox(std::string mailboxName, std::vector<storage_ptr> storages, MailboxLock _lock) : 
+		name{ std::move(mailboxName) }, storages{ std::move(storages) }, lock(std::move(_lock))
 	{
+		//nothing
 	}
 
 	//noncopyable
@@ -75,6 +76,9 @@ public:
 	/// </summary>
 	void reset();
 
+	/// <summary>
+	/// Update
+	/// </summary>
 	inline void setUpdate() { 
 		std::for_each(storages.cbegin(), storages.cend(), [](const auto& storage) { storage->setUpdateFlag(); });
 	}
@@ -84,10 +88,13 @@ public:
 		//child classes' destructors may do something
 	}
 
-protected:
+private:
 	std::vector<storage_ptr>::const_iterator findStorage(std::size_t& emailNumber) const;
 	std::string name;
 	std::vector<storage_ptr> storages;
+	MailboxLock lock;
 };
+
+typedef std::unique_ptr<Mailbox> mailbox_ptr;
 
 

@@ -1,9 +1,12 @@
 
 #include "MailboxServiceManager.h"
-#include "FileSystemMailStorage.h"
 #include "common_headers.h"
 
-bool MailboxServiceManager::acquireMailboxIfNotBusy(const std::string& name) {
+std::shared_ptr<UserManager> MailboxServiceManager::userManager;
+std::mutex MailboxServiceManager::m_mutex;
+std::set<std::string> MailboxServiceManager::activeMailboxes;
+
+bool MailboxServiceManager::LockMailbox(const std::string& name) {
 	std::lock_guard<std::mutex> _lock{ m_mutex };
 	auto it = activeMailboxes.find(name);
 	if (it != activeMailboxes.end()) {
@@ -15,27 +18,28 @@ bool MailboxServiceManager::acquireMailboxIfNotBusy(const std::string& name) {
 	}
 }
 
-void MailboxServiceManager::releaseMailbox(const std::string& name) {
+void MailboxServiceManager::UnlockMailbox(const std::string& name) {
 	std::lock_guard<std::mutex> _lock{ m_mutex };
 	activeMailboxes.erase(name);
 }
 
 
+#include "MailboxLock.h"
+#include "FileSystemMailStorage.h"
 
-std::variant<MailboxServiceManager::Mailbox_Ptr, MailboxOperationError, AuthError> MailboxServiceManager::connect(
+std::variant<mailbox_ptr, MailboxOperationError, AuthError> MailboxServiceManager::connect(
 	const std::string& mailboxName,
 	const std::string& password)
 {
-	//auto deleter_or_null = MailboxDeleter::create(mailboxName, shared_from_this());
-	busy_mailbox_guard guard{ shared_from_this(), mailboxName };
-	if (guard.acquire()) {
+	MailboxLock lock{ mailboxName };
+	if (lock()) {
 		auto result = userManager->logon(mailboxName, password);
 		if (std::holds_alternative<std::vector<StorageDescription>>(result)) {
 			auto vec = std::get<std::vector<StorageDescription>>(result);
 			if (vec.empty()) {
 				return AuthError::UserHasNoStorages;
 			}
-			std::vector<std::shared_ptr<MailStorage>> storages;
+			std::vector<storage_ptr> storages;
 			std::for_each(vec.cbegin(), vec.cend(), [&storages, &mailboxName](const auto& storageDescription)
 				{
 					try {
@@ -56,8 +60,7 @@ std::variant<MailboxServiceManager::Mailbox_Ptr, MailboxOperationError, AuthErro
 			if (storages.empty()) {
 				return MailboxOperationError::UserStoragesInstantinationFailure;
 			}
-			guard.release();  
-			return Mailbox_Ptr(new Mailbox(mailboxName, std::move(storages)));
+			return mailbox_ptr(new Mailbox(mailboxName, std::move(storages), std::move(lock)));
 		}
 		else {
 			return std::get<AuthError>(result);
