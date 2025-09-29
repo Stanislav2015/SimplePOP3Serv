@@ -17,4 +17,5 @@ source_group("source" FILES ${${PROJECT_NAME}_SOURCES})
 
 ### Add library
 add_library(${LIBRARY_NAME} STATIC ${${PROJECT_NAME}_HEADERS} ${${PROJECT_NAME}_SOURCES})
+target_link_libraries(${LIBRARY_NAME} PRIVATE RapidJSON)
 target_include_directories(${LIBRARY_NAME} PUBLIC "include")

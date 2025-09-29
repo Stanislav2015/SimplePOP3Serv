@@ -34,8 +34,8 @@ std::variant<mailbox_ptr, MailboxOperationError, AuthError> MailboxServiceManage
 	MailboxLock lock{ mailboxName };
 	if (lock()) {
 		auto result = userManager->logon(mailboxName, password);
-		if (std::holds_alternative<std::vector<StorageDescription>>(result)) {
-			auto vec = std::get<std::vector<StorageDescription>>(result);
+		if (std::holds_alternative<std::vector<StorageSettings>>(result)) {
+			auto vec = std::get<std::vector<StorageSettings>>(result);
 			if (vec.empty()) {
 				return AuthError::UserHasNoStorages;
 			}

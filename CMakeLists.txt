@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 project ("Mail")
 
 find_package(Boost REQUIRED)
+find_package(RapidJSON CONFIG REQUIRED)
 
 add_subdirectory(POP3ServiceCore)
 add_subdirectory(POP3Server)

@@ -4,8 +4,13 @@
 
 enum class StorageType
 {
+	Undefined,
 	FileSystemMailStorage
 };
+
+inline bool checkIfStorageTypeValid(StorageType value) {
+	return value == StorageType::FileSystemMailStorage;
+}
 
 enum class AuthError
 {

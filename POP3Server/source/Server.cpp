@@ -5,6 +5,7 @@
 #include "UserManager.h"
 #include "MailboxServiceManager.h"
 #include "POP3Server.h"
+#include "Settings.h"
 
 #include <boost/asio.hpp>
 #include <thread>
@@ -13,8 +14,15 @@ using namespace boost::asio;
 
 int main()
 {
-	//TODO: Реализовать полноценную фабрику
-	std::shared_ptr<UserManager> userManager{ new DummyUserManager() };
+	auto stor = FileSystemSettingsStorage::createDefault();
+	/*for (int i = 0; i < 10; i++) {
+		using namespace std::string_literals;
+		UserSettings settingsInstance("user"s.append(boost::lexical_cast<std::string>(i + 1)), "11111111");
+		settingsInstance.addStorage(StorageType::FileSystemMailStorage);
+		stor->addUserSettings(settingsInstance);
+	}*/
+	std::shared_ptr<UserManager> userManager{ new SingleStorageUserManager(stor) };
+
 	MailboxServiceManager::SetUserManager(userManager);
 
 	try {
