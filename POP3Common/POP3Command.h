@@ -86,6 +86,10 @@ inline std::variant<POP3Command, ParsingError> parsePOP3Command(const std::strin
 		return ParsingError::UnknownCommand;
 	}
 
+	if (cmd.cmdType == POP3CommandType::UNKNOWN) {
+		return ParsingError::UnknownCommand;
+	}
+
 	if (v.size() > 1) {
 		if (POP3Command::supportsUintParameter(cmd.cmdType)) {
 			try {

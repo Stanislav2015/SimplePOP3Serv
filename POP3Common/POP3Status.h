@@ -4,7 +4,8 @@
 
 enum class POP3Status {
 	OK,
-	ERR
+	ERR,
+	UNKNOWN
 };
 
 inline std::ostream& operator<<(std::ostream& out, const POP3Status& val) {
@@ -31,7 +32,7 @@ inline std::istream& operator>>(std::istream& in, POP3Status& val) {
 		val = POP3Status::ERR;
 	else {
 		//Wrong command
-		throw std::exception{ std::string("Invalid POP3 status: ").append(stringWCommand).c_str() };
+		val = POP3Status::UNKNOWN;
 	}
 	return in;
 }

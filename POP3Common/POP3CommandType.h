@@ -3,6 +3,7 @@
 #include <iostream>
 
 enum class POP3CommandType {
+	UNKNOWN,
 	USER,
 	PASS,
 	STAT,
@@ -72,8 +73,8 @@ inline std::istream& operator>>(std::istream& in, POP3CommandType& val) {
 	else if (stringWCommand == "QUIT")
 		val = POP3CommandType::QUIT;
 	else {
-		//Wrong command
-		throw std::exception{ std::string{"Invalid POP3 command: "}.append(stringWCommand).c_str() };
+		//Perhaps wrong command
+		val = POP3CommandType::UNKNOWN;
 	}
 	return in;
 }
