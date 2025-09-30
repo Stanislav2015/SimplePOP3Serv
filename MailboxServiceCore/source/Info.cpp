@@ -197,7 +197,7 @@ bool FileSystemConsumerInfoStorage::hasMailbox(std::string_view name) const {
 #include <unistd.h>
 #endif
 
-std::shared_ptr<ConsumerInfoStorage> FileSystemConsumerInfoStorage::createDefault() {
+std::unique_ptr<ConsumerInfoStorage> FileSystemConsumerInfoStorage::Default() {
 	std::filesystem::path path;
 #ifdef WIN32
 	PWSTR homeDir = nullptr;
@@ -210,5 +210,5 @@ std::shared_ptr<ConsumerInfoStorage> FileSystemConsumerInfoStorage::createDefaul
 #endif
 	path /= "mailclients";
 	std::filesystem::create_directory(path);
-	return std::make_shared<FileSystemConsumerInfoStorage>(path);
+	return std::make_unique<FileSystemConsumerInfoStorage>(path);
 }

@@ -53,7 +53,7 @@ protected:
 class SingleConsumerInfoStorageAuthorizationManager : public AuthorizationManager
 {
 public:
-	SingleConsumerInfoStorageAuthorizationManager(std::shared_ptr<ConsumerInfoStorage> ptr) : storage(ptr) {}
+	SingleConsumerInfoStorageAuthorizationManager(std::unique_ptr<ConsumerInfoStorage> ptr) : storage(std::move(ptr)) {}
 
 	bool verifyName(std::string_view name) const override {
 		assert(storage);
@@ -76,5 +76,5 @@ private:
 		return settings->storages;
 	}
 
-	std::shared_ptr<ConsumerInfoStorage> storage;
+	std::unique_ptr<ConsumerInfoStorage> storage;
 };

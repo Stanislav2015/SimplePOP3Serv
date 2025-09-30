@@ -70,7 +70,7 @@ public:
 	void refresh() override;
 	bool hasMailbox(std::string_view) const override;
 
-	static std::shared_ptr<ConsumerInfoStorage> createDefault();
+	static std::unique_ptr<ConsumerInfoStorage> Default();
 
 private:
 	

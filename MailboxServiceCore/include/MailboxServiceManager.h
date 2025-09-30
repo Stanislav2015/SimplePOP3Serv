@@ -27,9 +27,11 @@ public:
 	
 	static void UnlockMailbox(std::string_view name);
 	static bool LockMailbox(std::string_view name);
-	static void SetAuthorizationManager(std::shared_ptr<AuthorizationManager> ptr) { AuthorizationManager = ptr; }
+	static void SetAuthorizationManager(std::unique_ptr<AuthorizationManager> ptr) { 
+		AuthorizationManager = std::move(ptr); 
+	}
 private:
-	static std::shared_ptr<AuthorizationManager> AuthorizationManager;
+	static std::unique_ptr<AuthorizationManager> AuthorizationManager;
 	static std::mutex m_mutex;
 	static std::set<std::string> activeMailboxes;
 };

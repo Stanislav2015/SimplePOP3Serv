@@ -2,7 +2,7 @@
 #include "MailboxServiceManager.h"
 #include "common_headers.h"
 
-std::shared_ptr<AuthorizationManager> MailboxServiceManager::AuthorizationManager;
+std::unique_ptr<AuthorizationManager> MailboxServiceManager::AuthorizationManager;
 std::mutex MailboxServiceManager::m_mutex;
 std::set<std::string> MailboxServiceManager::activeMailboxes;
 
