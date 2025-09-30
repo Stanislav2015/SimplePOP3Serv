@@ -22,8 +22,10 @@ int main()
 		stor->addConsumerInfo(settingsInstance);
 	}*/
 	std::shared_ptr<AuthorizationManager> AuthorizationManager{ new SingleConsumerInfoStorageAuthorizationManager(stor) };
-
 	MailboxServiceManager::SetAuthorizationManager(AuthorizationManager);
+
+	unsigned int thread_pool_size = std::thread::hardware_concurrency() * 2;
+	thread_pool_size = std::max(static_cast<unsigned int>(2), thread_pool_size);
 
 	try {
 		io_context io_context;
@@ -32,7 +34,12 @@ int main()
 		POP3ServerBuilder builder(addr, port_number);
 		auto server = builder.build(io_context);
 		server.serve();
-		auto fut = std::async(std::launch::async, [&io_context] { io_context.run(); });
+
+		std::vector<std::future<void>> futures;
+		std::generate_n(std::back_inserter(futures), thread_pool_size, [&io_context]() {
+				return std::async(std::launch::async, [&io_context] { io_context.run(); });
+			});
+
 		while (true) {
 			std::string command;
 			std::cin >> command;
@@ -46,7 +53,15 @@ int main()
 			catch (...) {
 			}
 		}
-		fut.get();
+		
+		for (auto& future : futures) {
+			try {
+				future.get(); 
+			}
+			catch (const std::exception& e) {
+				std::cerr << e.what() << std::endl;
+			}
+		}
 	}
 	catch (std::exception& e) {
 		std::cerr << e.what() << std::endl;
