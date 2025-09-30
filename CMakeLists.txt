@@ -8,7 +8,7 @@ project ("Mail")
 find_package(Boost REQUIRED)
 find_package(RapidJSON CONFIG REQUIRED)
 
-add_subdirectory(POP3ServiceCore)
+add_subdirectory(MailboxServiceCore)
 add_subdirectory(POP3Server)
 
 

@@ -1,5 +1,5 @@
 
-set(PROJECT_NAME POP3ServiceCore)
+set(PROJECT_NAME MailboxServiceCore)
 set(LIBRARY_NAME ${PROJECT_NAME})
 project(${PROJECT_NAME})
 

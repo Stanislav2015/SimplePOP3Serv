@@ -17,10 +17,11 @@ source_group("source" FILES ${${PROJECT_NAME}_SOURCES})
 add_executable(${EXECUTABLE_NAME} ${${PROJECT_NAME}_HEADERS} ${${PROJECT_NAME}_SOURCES})
 
 ### Include directories w headers
-target_include_directories(POP3Server PRIVATE "include")
-target_include_directories(POP3Server PRIVATE "${CMAKE_SOURCE_DIR}/POP3Common")
-target_include_directories(POP3Server PRIVATE "${CMAKE_SOURCE_DIR}/POP3ServiceCore/include")
-target_include_directories(POP3Server PRIVATE "${Boost_INCLUDE_DIRS}")
+target_include_directories(${EXECUTABLE_NAME} PRIVATE "include")
+target_include_directories(${EXECUTABLE_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/POP3Common")
+target_include_directories(${EXECUTABLE_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/Common")
+target_include_directories(${EXECUTABLE_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/MailboxServiceCore/include")
+target_include_directories(${EXECUTABLE_NAME} PRIVATE "${Boost_INCLUDE_DIRS}")
 
 ### Link addiitonal libs
-target_link_libraries(POP3Server PRIVATE POP3ServiceCore)
+target_link_libraries(${EXECUTABLE_NAME} PRIVATE MailboxServiceCore)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Info.h"
+#include <variant>
 
 class AuthorizationManager
 {
