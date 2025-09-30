@@ -74,7 +74,7 @@ public:
 	FileSystemStorageFactory([[maybe_unused]] std::map<std::string, std::string> options) : FileSystemStorageFactory() {
 	}
 
-	std::shared_ptr<FileSystemMailStorage> create(std::string mailboxName) const;
+	std::shared_ptr<FileSystemMailStorage> create(std::string_view mailboxName) const;
 
 private:
 	void setDefaultPath();

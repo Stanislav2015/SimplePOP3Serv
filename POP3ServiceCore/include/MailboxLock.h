@@ -4,7 +4,7 @@
 
 class MailboxLock {
 public:
-	MailboxLock(std::string name);
+	MailboxLock(std::string_view name);
 
 	//noncopyable
 	MailboxLock(const MailboxLock&) = delete;

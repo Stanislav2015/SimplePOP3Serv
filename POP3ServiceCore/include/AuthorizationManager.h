@@ -5,9 +5,9 @@
 class AuthorizationManager
 {
 public:
-	virtual bool verifyName(const std::string& name) const = 0;
+	virtual bool verifyName(std::string_view name) const = 0;
 	
-	std::variant<AuthError, std::vector<MailStorageInfo>> logon(const std::string& name, const std::string& password) {
+	std::variant<AuthError, std::vector<MailStorageInfo>> logon(std::string_view name, std::string_view password) {
 		if (!verifyName(name)) {
 			return AuthError::NoSuchConsumer;
 		}
@@ -18,8 +18,8 @@ public:
 	}
 
 protected:
-	virtual std::vector<MailStorageInfo> getMailStoragesAssociatedWithConsumer(const std::string& name) const = 0;
-	virtual bool verifyCredentials(const std::string& name, const std::string& password) const = 0;
+	virtual std::vector<MailStorageInfo> getMailStoragesAssociatedWithConsumer(std::string_view name) const = 0;
+	virtual bool verifyCredentials(std::string_view name, std::string_view password) const = 0;
 };
 
 /// <summary>
@@ -28,16 +28,16 @@ protected:
 class DummyAuthorizationManager : public AuthorizationManager
 {
 public:
-	bool verifyName(const std::string& name) const override {
+	bool verifyName(std::string_view name) const override {
 		return true; 
 	}
 protected:
 	
-	bool verifyCredentials(const std::string& name, const std::string& password) const override { 
+	bool verifyCredentials(std::string_view name, std::string_view password) const override {
 		return true; 
 	}
 
-	std::vector<MailStorageInfo> getMailStoragesAssociatedWithConsumer(const std::string& name) const override {
+	std::vector<MailStorageInfo> getMailStoragesAssociatedWithConsumer(std::string_view name) const override {
 		std::vector<MailStorageInfo> vec;
 
 		{
@@ -54,22 +54,19 @@ class SingleConsumerInfoStorageAuthorizationManager : public AuthorizationManage
 public:
 	SingleConsumerInfoStorageAuthorizationManager(std::shared_ptr<ConsumerInfoStorage> ptr) : storage(ptr) {}
 
-	bool verifyName(const std::string& name) const override {
+	bool verifyName(std::string_view name) const override {
 		assert(storage);
 		return storage->hasMailbox(name);
 	}
 
-	/*inline void setStorage(std::shared_ptr<ConsumerInfoStorage> ptr) {
-		storage = ptr; 
-	}*/
 private:
-	bool verifyCredentials(const std::string& name, const std::string& password) const override {
+	bool verifyCredentials(std::string_view name, std::string_view password) const override {
 		assert(storage);
 		auto settings = storage->getConsumerInfo(name);
 		return settings && settings->password == password;
 	}
 
-	std::vector<MailStorageInfo> getMailStoragesAssociatedWithConsumer(const std::string& name) const override {
+	std::vector<MailStorageInfo> getMailStoragesAssociatedWithConsumer(std::string_view name) const override {
 		assert(storage);
 		auto settings = storage->getConsumerInfo(name);
 		if (!settings) {

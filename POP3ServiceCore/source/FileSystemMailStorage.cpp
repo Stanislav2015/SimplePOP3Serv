@@ -62,7 +62,7 @@ FileSystemMailStorage::~FileSystemMailStorage() {
 	}
 }
 
-std::shared_ptr<FileSystemMailStorage> FileSystemStorageFactory::create(std::string mailboxName) const {
+std::shared_ptr<FileSystemMailStorage> FileSystemStorageFactory::create(std::string_view mailboxName) const {
 	
 	std::filesystem::path mail_storage_directory = mailStoragePath;
 	mail_storage_directory /= mailboxName;

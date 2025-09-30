@@ -6,8 +6,9 @@ std::shared_ptr<AuthorizationManager> MailboxServiceManager::AuthorizationManage
 std::mutex MailboxServiceManager::m_mutex;
 std::set<std::string> MailboxServiceManager::activeMailboxes;
 
-bool MailboxServiceManager::LockMailbox(const std::string& name) {
+bool MailboxServiceManager::LockMailbox(std::string_view _name) {
 	std::lock_guard<std::mutex> _lock{ m_mutex };
+	const std::string name(_name);
 	auto it = activeMailboxes.find(name);
 	if (it != activeMailboxes.end()) {
 		return false;
@@ -18,9 +19,9 @@ bool MailboxServiceManager::LockMailbox(const std::string& name) {
 	}
 }
 
-void MailboxServiceManager::UnlockMailbox(const std::string& name) {
+void MailboxServiceManager::UnlockMailbox(std::string_view name) {
 	std::lock_guard<std::mutex> _lock{ m_mutex };
-	activeMailboxes.erase(name);
+	activeMailboxes.erase(name.data());
 }
 
 
@@ -28,8 +29,8 @@ void MailboxServiceManager::UnlockMailbox(const std::string& name) {
 #include "FileSystemMailStorage.h"
 
 std::variant<mailbox_ptr, MailboxOperationError, AuthError> MailboxServiceManager::VerifyCredentialsAndConnect(
-	const std::string& mailboxName,
-	const std::string& password)
+	std::string_view mailboxName,
+	std::string_view password)
 {
 	MailboxLock lock{ mailboxName };
 	if (lock()) {

@@ -91,7 +91,7 @@ std::string ConsumerInfo::Serialize() const {
 	}
 }
 
-bool ConsumerInfo::SerializeToFile(std::filesystem::path _Where) const {
+bool ConsumerInfo::SerializeToFile(std::string_view _Where) const {
 	std::ofstream file(_Where);
 	if (!file.is_open()) {
 		return false;
@@ -108,15 +108,18 @@ std::optional<ConsumerInfo> ConsumerInfo::Deserialize(std::string_view jsonStrin
 	using namespace rapidjson;
 	Document document;  // Default template parameter uses UTF8 and MemoryPoolAllocator.
 	// In-situ parsing, decode strings directly in the source string. Source must be string.
-	char* buffer = new char[jsonString.length() + 1];
-	memcpy(buffer, jsonString.data(), jsonString.length());
+	std::unique_ptr<char[]> buffer{ new char[jsonString.length() + 1] };
+	if (!buffer) {
+		return std::optional<ConsumerInfo>();
+	}
+	memcpy(buffer.get(), jsonString.data(), jsonString.length());
 	buffer[jsonString.length()] = '\0';
-	if (document.ParseInsitu(buffer).HasParseError())
+	if (document.ParseInsitu(buffer.get()).HasParseError())
 		return std::optional<ConsumerInfo>();
 	return Deserialize(document);
 }
 
-std::optional<ConsumerInfo> ConsumerInfo::DeserializeFromFile(std::filesystem::path _From) {
+std::optional<ConsumerInfo> ConsumerInfo::DeserializeFromFile(std::string_view _From) {
 	using namespace rapidjson;
 	std::ifstream file(_From);
 	if (!file.is_open()) {
@@ -129,9 +132,7 @@ std::optional<ConsumerInfo> ConsumerInfo::DeserializeFromFile(std::filesystem::p
 
 std::optional<ConsumerInfo> FileSystemConsumerInfoStorage::getConsumerInfo(std::string_view name) const {
 	std::shared_lock lock(m_mutex);
-	auto it = std::find_if(username_vs_filename.cbegin(), username_vs_filename.cend(), [&name](const auto& pair) {
-			return pair.first == name;
-		});
+	auto it = username_vs_filename.find(name.data());
 	if (it == username_vs_filename.cend()) {
 		return std::optional<ConsumerInfo>();
 	}
@@ -145,14 +146,14 @@ bool FileSystemConsumerInfoStorage::addConsumerInfo(const ConsumerInfo& settings
 		return false;
 	}
 	auto filepath = path_to_storage / (settings.name + ".json");
-	auto result = settings.SerializeToFile(filepath);
+	auto result = settings.SerializeToFile(filepath.string());
 	if (result) {
 		username_vs_filename.emplace(settings.name, filepath.string());
 	}
 	return result;
 }
 
-std::string quickExtractNameFromJson(std::filesystem::path _path) {
+std::string quickExtractNameFromJson(std::string_view _path) {
 	std::ifstream file(_path);
 	if (!file.is_open()) {
 		return "";
@@ -176,7 +177,7 @@ void FileSystemConsumerInfoStorage::refresh() {
 	std::unique_lock lock{ m_mutex };
 	username_vs_filename.clear();
 	std::for_each(files.cbegin(), files.cend(), [this](const auto& filename) {
-			auto name = quickExtractNameFromJson(filename);
+			auto name = quickExtractNameFromJson(filename.string());
 			username_vs_filename.emplace(name, filename.string());
 		});
 }

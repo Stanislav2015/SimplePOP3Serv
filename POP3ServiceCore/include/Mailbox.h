@@ -15,8 +15,8 @@
 class Mailbox
 {
 public:
-	Mailbox(std::string mailboxName, std::vector<storage_ptr> storages, MailboxLock _lock) : 
-		name{ std::move(mailboxName) }, storages{ std::move(storages) }, lock(std::move(_lock))
+	Mailbox(std::string_view mailboxName, std::vector<storage_ptr> storages, MailboxLock _lock) :
+		name(mailboxName), storages(std::move(storages)), lock(std::move(_lock))
 	{
 		//nothing
 	}

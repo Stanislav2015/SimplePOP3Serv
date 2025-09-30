@@ -15,7 +15,7 @@ public:
 	/// </summary>
 	/// <param name="mailboxName">Name of mailbox</param>
 	/// <returns></returns>
-	static bool VerifyName(const std::string& name) { return AuthorizationManager->verifyName(name); }
+	static bool VerifyName(std::string_view name) { return AuthorizationManager->verifyName(name); }
 	
 	/// <summary>
 	/// VerifyCredentialsAndConnect to mailbox (inclusivelly)
@@ -23,10 +23,10 @@ public:
 	/// <param name="mailboxName"></param>
 	/// <param name="password"></param>
 	/// <returns></returns>
-	static std::variant<mailbox_ptr, MailboxOperationError, AuthError> VerifyCredentialsAndConnect(const std::string& mailboxName, const std::string& password);
+	static std::variant<mailbox_ptr, MailboxOperationError, AuthError> VerifyCredentialsAndConnect(std::string_view mailboxName, std::string_view password);
 	
-	static void UnlockMailbox(const std::string& name);
-	static bool LockMailbox(const std::string& name);
+	static void UnlockMailbox(std::string_view name);
+	static bool LockMailbox(std::string_view name);
 	static void SetAuthorizationManager(std::shared_ptr<AuthorizationManager> ptr) { AuthorizationManager = ptr; }
 private:
 	static std::shared_ptr<AuthorizationManager> AuthorizationManager;

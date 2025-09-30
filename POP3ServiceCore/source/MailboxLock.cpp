@@ -2,7 +2,7 @@
 #include "MailboxLock.h"
 #include "MailboxServiceManager.h"
 
-MailboxLock::MailboxLock(std::string name) : name{ name }, acquired{ false } {
+MailboxLock::MailboxLock(std::string_view name) : name(name), acquired(false) {
 	acquired = MailboxServiceManager::LockMailbox(name);
 }
 

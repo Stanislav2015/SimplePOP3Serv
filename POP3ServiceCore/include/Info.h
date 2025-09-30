@@ -42,11 +42,11 @@ struct ConsumerInfo
 
 	bool Serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer) const;
 	std::string Serialize() const;
-	bool SerializeToFile(std::filesystem::path _Where) const;
+	bool SerializeToFile(std::string_view _Where) const;
 
 	static std::optional<ConsumerInfo> Deserialize(const rapidjson::Value& obj);
 	static std::optional<ConsumerInfo> Deserialize(std::string_view jsonString);
-	static std::optional<ConsumerInfo> DeserializeFromFile(std::filesystem::path _From);
+	static std::optional<ConsumerInfo> DeserializeFromFile(std::string_view _From);
 };
 
 class ConsumerInfoStorage

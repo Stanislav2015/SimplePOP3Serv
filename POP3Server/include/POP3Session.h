@@ -129,7 +129,7 @@ private:
 	void readImpl();
 
 	void putMailboxInfoToReponse();
-	void setSimpleOkResponse(std::string = "");
+	void setSimpleOkResponse(std::string_view = "");
 	void handleList(const POP3Command& cmd);
 	void handleDelete(const POP3Command& cmd);
 	void handleRetr(const POP3Command& cmd);

@@ -53,8 +53,8 @@ void POP3Session::putMailboxInfoToReponse() {
 	response = ss.str();
 }
 
-void POP3Session::setSimpleOkResponse(std::string mesg) {
-	response = boost::lexical_cast<std::string>(POP3Status::OK) + (mesg.empty() ? "" : " ") + mesg + "\r\n";
+void POP3Session::setSimpleOkResponse(std::string_view mesg) {
+	response = boost::lexical_cast<std::string>(POP3Status::OK) + (mesg.empty() ? "" : " ") + mesg.data() + "\r\n";
 }
 
 void POP3Session::handleAnonymousCommand(const POP3Command& cmd) {
