@@ -1,7 +1,7 @@
 #pragma once
 
 #include "POP3Session.h"
-#include "UserManager.h"
+#include "AuthorizationManager.h"
 #include "MailboxServiceManager.h"
 
 #include <memory>

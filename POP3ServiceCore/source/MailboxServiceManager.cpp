@@ -2,7 +2,7 @@
 #include "MailboxServiceManager.h"
 #include "common_headers.h"
 
-std::shared_ptr<UserManager> MailboxServiceManager::userManager;
+std::shared_ptr<AuthorizationManager> MailboxServiceManager::AuthorizationManager;
 std::mutex MailboxServiceManager::m_mutex;
 std::set<std::string> MailboxServiceManager::activeMailboxes;
 
@@ -27,17 +27,17 @@ void MailboxServiceManager::UnlockMailbox(const std::string& name) {
 #include "MailboxLock.h"
 #include "FileSystemMailStorage.h"
 
-std::variant<mailbox_ptr, MailboxOperationError, AuthError> MailboxServiceManager::connect(
+std::variant<mailbox_ptr, MailboxOperationError, AuthError> MailboxServiceManager::VerifyCredentialsAndConnect(
 	const std::string& mailboxName,
 	const std::string& password)
 {
 	MailboxLock lock{ mailboxName };
 	if (lock()) {
-		auto result = userManager->logon(mailboxName, password);
-		if (std::holds_alternative<std::vector<StorageSettings>>(result)) {
-			auto vec = std::get<std::vector<StorageSettings>>(result);
+		auto result = AuthorizationManager->logon(mailboxName, password);
+		if (std::holds_alternative<std::vector<MailStorageInfo>>(result)) {
+			auto vec = std::get<std::vector<MailStorageInfo>>(result);
 			if (vec.empty()) {
-				return AuthError::UserHasNoStorages;
+				return AuthError::ConsumerHasNoAssociatedMailStorage;
 			}
 			std::vector<storage_ptr> storages;
 			std::for_each(vec.cbegin(), vec.cend(), [&storages, &mailboxName](const auto& storageDescription)

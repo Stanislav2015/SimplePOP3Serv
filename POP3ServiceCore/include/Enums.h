@@ -14,22 +14,22 @@ inline bool checkIfStorageTypeValid(StorageType value) {
 
 enum class AuthError
 {
-	UserIsNotRegistered,
+	NoSuchConsumer,
 	InvalidPassword,
-	UserHasNoStorages
+	ConsumerHasNoAssociatedMailStorage
 };
 
 inline std::ostream& operator<<(std::ostream& out, const AuthError& err) {
 	std::string message;
 	switch (err)
 	{
-	case AuthError::UserIsNotRegistered:
+	case AuthError::NoSuchConsumer:
 		message = "sorry, no mailbox for such user here";
 		break;
 	case AuthError::InvalidPassword:
 		message = "invalid password";
 		break;
-	case AuthError::UserHasNoStorages:
+	case AuthError::ConsumerHasNoAssociatedMailStorage:
 		message = "login and password are corrent, however default mail storage is not set for this user";
 		break;
 	default:

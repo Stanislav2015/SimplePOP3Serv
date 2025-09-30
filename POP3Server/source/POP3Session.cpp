@@ -62,7 +62,7 @@ void POP3Session::handleAnonymousCommand(const POP3Command& cmd) {
 	{
 	case POP3CommandType::USER: {
 		auto username = std::get<std::string>(cmd.parameter);
-		if (!MailboxServiceManager::IsUserRegistered(username)) {
+		if (!MailboxServiceManager::VerifyName(username)) {
 			setErrorResponse(POP3SessionError::MailboxNotFound);
 		}
 		else {
@@ -76,7 +76,7 @@ void POP3Session::handleAnonymousCommand(const POP3Command& cmd) {
 	}
 	case POP3CommandType::PASS: {
 		auto pass = std::get<std::string>(cmd.parameter);
-		auto result = MailboxServiceManager::connect(userName, pass);
+		auto result = MailboxServiceManager::VerifyCredentialsAndConnect(userName, pass);
 		if (std::holds_alternative<mailbox_ptr>(result)) {
 			mailbox = std::move(std::get<mailbox_ptr>(result));
 			state = POP3SessionState::Transaction;

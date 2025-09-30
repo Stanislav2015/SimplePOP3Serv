@@ -1,5 +1,5 @@
 
-#include "Settings.h"
+#include "Info.h"
 
 #include <algorithm>
 #include <fstream>
@@ -7,7 +7,7 @@
 #include <boost/lexical_cast.hpp>
 #include <rapidjson/prettywriter.h>
 
-bool StorageSettings::Serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
+bool MailStorageInfo::Serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
 	writer.StartObject();
 
 	writer.String("type");
@@ -23,24 +23,24 @@ bool StorageSettings::Serialize(rapidjson::Writer<rapidjson::StringBuffer>& writ
 }
 
 
-std::optional<StorageSettings> StorageSettings::Deserialize(const rapidjson::Value& obj) {
-	StorageSettings settings;
+std::optional<MailStorageInfo> MailStorageInfo::Deserialize(const rapidjson::Value& obj) {
+	MailStorageInfo settings;
 	std::transform(obj.MemberBegin(), obj.MemberEnd(), std::inserter(settings.options, settings.options.begin()), [](const auto& member) {
 		return std::make_pair(member.name.GetString(), member.value.GetString());
 		});
 	auto typeIterator = settings.options.find("type");
 	if (typeIterator == settings.options.cend()) {
-		return std::optional<StorageSettings>();
+		return std::optional<MailStorageInfo>();
 	}
 	settings.storageType = static_cast<StorageType>(boost::lexical_cast<unsigned int>(typeIterator->second));
 	if (!checkIfStorageTypeValid(settings.storageType)) {
-		return std::optional<StorageSettings>();
+		return std::optional<MailStorageInfo>();
 	}
 	settings.options.erase(typeIterator);
 	return settings;
 }
 
-bool UserSettings::Serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
+bool ConsumerInfo::Serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
 	writer.StartObject();
 	writer.String("name");
 	writer.String(name.c_str());
@@ -57,10 +57,10 @@ bool UserSettings::Serialize(rapidjson::Writer<rapidjson::StringBuffer>& writer)
 	return true;
 }
 
-std::optional<UserSettings> UserSettings::Deserialize(const rapidjson::Value& obj) {
-	UserSettings settings;
+std::optional<ConsumerInfo> ConsumerInfo::Deserialize(const rapidjson::Value& obj) {
+	ConsumerInfo settings;
 	if (!obj.HasMember("name") || !obj.HasMember("password")) {
-		return std::optional<UserSettings>();
+		return std::optional<ConsumerInfo>();
 	}
 	settings.name = (obj["name"].GetString());
 	settings.password = (obj["password"].GetString());
@@ -71,7 +71,7 @@ std::optional<UserSettings> UserSettings::Deserialize(const rapidjson::Value& ob
 	settings.storages.reserve(stores.Size());
 	auto it = std::back_inserter(settings.storages);
 	std::for_each(stores.Begin(), stores.End(), [&it](const auto& storageJsonMember) {
-		auto result = StorageSettings::Deserialize(storageJsonMember);
+		auto result = MailStorageInfo::Deserialize(storageJsonMember);
 		if (result) {
 			it++ = *result;
 		}
@@ -79,7 +79,7 @@ std::optional<UserSettings> UserSettings::Deserialize(const rapidjson::Value& ob
 	return settings;
 }
 
-std::string UserSettings::Serialize() const {
+std::string ConsumerInfo::Serialize() const {
 	using namespace rapidjson;
 	StringBuffer sb;
 	PrettyWriter<StringBuffer> writer(sb);
@@ -91,7 +91,7 @@ std::string UserSettings::Serialize() const {
 	}
 }
 
-bool UserSettings::SerializeToFile(std::filesystem::path _Where) const {
+bool ConsumerInfo::SerializeToFile(std::filesystem::path _Where) const {
 	std::ofstream file(_Where);
 	if (!file.is_open()) {
 		return false;
@@ -104,7 +104,7 @@ bool UserSettings::SerializeToFile(std::filesystem::path _Where) const {
 	return true;
 }
 
-std::optional<UserSettings> UserSettings::Deserialize(std::string_view jsonString) {
+std::optional<ConsumerInfo> ConsumerInfo::Deserialize(std::string_view jsonString) {
 	using namespace rapidjson;
 	Document document;  // Default template parameter uses UTF8 and MemoryPoolAllocator.
 	// In-situ parsing, decode strings directly in the source string. Source must be string.
@@ -112,34 +112,34 @@ std::optional<UserSettings> UserSettings::Deserialize(std::string_view jsonStrin
 	memcpy(buffer, jsonString.data(), jsonString.length());
 	buffer[jsonString.length()] = '\0';
 	if (document.ParseInsitu(buffer).HasParseError())
-		return std::optional<UserSettings>();
+		return std::optional<ConsumerInfo>();
 	return Deserialize(document);
 }
 
-std::optional<UserSettings> UserSettings::DeserializeFromFile(std::filesystem::path _From) {
+std::optional<ConsumerInfo> ConsumerInfo::DeserializeFromFile(std::filesystem::path _From) {
 	using namespace rapidjson;
 	std::ifstream file(_From);
 	if (!file.is_open()) {
-		return std::optional<UserSettings>();
+		return std::optional<ConsumerInfo>();
 	}
 	std::ostringstream os;
 	os << file.rdbuf();
 	return Deserialize(os.str());
 }
 
-std::optional<UserSettings> FileSystemSettingsStorage::getUserSettings(std::string_view name) const {
+std::optional<ConsumerInfo> FileSystemConsumerInfoStorage::getConsumerInfo(std::string_view name) const {
 	std::shared_lock lock(m_mutex);
 	auto it = std::find_if(username_vs_filename.cbegin(), username_vs_filename.cend(), [&name](const auto& pair) {
 			return pair.first == name;
 		});
 	if (it == username_vs_filename.cend()) {
-		return std::optional<UserSettings>();
+		return std::optional<ConsumerInfo>();
 	}
-	return UserSettings::DeserializeFromFile(it->second);
+	return ConsumerInfo::DeserializeFromFile(it->second);
 }
 
 
-bool FileSystemSettingsStorage::addUserSettings(const UserSettings& settings) {
+bool FileSystemConsumerInfoStorage::addConsumerInfo(const ConsumerInfo& settings) {
 	std::unique_lock lock(m_mutex);
 	if (username_vs_filename.find(settings.name) != username_vs_filename.cend()) {
 		return false;
@@ -166,7 +166,7 @@ std::string quickExtractNameFromJson(std::filesystem::path _path) {
 	return s.substr(offset + 1, next_offset - offset - 1);
 }
 
-void FileSystemSettingsStorage::refresh() {
+void FileSystemConsumerInfoStorage::refresh() {
 	std::vector<std::filesystem::path> files;
 	std::copy_if(std::filesystem::directory_iterator(path_to_storage), std::filesystem::directory_iterator{},
 		std::back_inserter(files), [](const auto& path) {
@@ -181,7 +181,7 @@ void FileSystemSettingsStorage::refresh() {
 		});
 }
 
-bool FileSystemSettingsStorage::hasMailbox(std::string_view name) const {
+bool FileSystemConsumerInfoStorage::hasMailbox(std::string_view name) const {
 	std::shared_lock lock(m_mutex);
 	auto it = std::find_if(username_vs_filename.cbegin(), username_vs_filename.cend(), [&name](const auto& pair) {
 		return pair.first == name;
@@ -196,7 +196,7 @@ bool FileSystemSettingsStorage::hasMailbox(std::string_view name) const {
 #include <unistd.h>
 #endif
 
-std::shared_ptr<SettingsStorage> FileSystemSettingsStorage::createDefault() {
+std::shared_ptr<ConsumerInfoStorage> FileSystemConsumerInfoStorage::createDefault() {
 	std::filesystem::path path;
 #ifdef WIN32
 	PWSTR homeDir = nullptr;
@@ -209,5 +209,5 @@ std::shared_ptr<SettingsStorage> FileSystemSettingsStorage::createDefault() {
 #endif
 	path /= "mailclients";
 	std::filesystem::create_directory(path);
-	return std::make_shared<FileSystemSettingsStorage>(path);
+	return std::make_shared<FileSystemConsumerInfoStorage>(path);
 }
