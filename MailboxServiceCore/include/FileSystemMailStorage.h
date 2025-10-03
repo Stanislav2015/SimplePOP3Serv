@@ -1,12 +1,17 @@
 #pragma once
 
 #include "MailStorage.h"
+#include "ConsumerInfo.h"
+
+
 #include <filesystem>
 #include <vector>
 #include <memory>
 #include <array>
 #include <map>
 #include <variant>
+
+
 
 class FileSystemMailStorage : public MailStorage
 {
@@ -57,7 +62,7 @@ class FileSystemStorageFactory
 public:
 	FileSystemStorageFactory() 
 	{
-		setDefaultPath();
+		/*setDefaultPath();
 		if (mailStoragePath.empty()) {
 			throw std::exception("mailStoragePath is empty");
 		}
@@ -66,20 +71,12 @@ public:
 			if (!std::filesystem::create_directory(mailStoragePath)) {
 				throw std::exception{ "Failed to create mailbox directory" };
 			}
-		}
+		}*/
 	}
 
-
-	//TODO: Продумать возможные настройки
-	FileSystemStorageFactory([[maybe_unused]] std::map<std::string, std::string> options) : FileSystemStorageFactory() {
-	}
-
-	std::shared_ptr<FileSystemMailStorage> create(std::string_view mailboxName) const;
-
+	static std::shared_ptr<FileSystemMailStorage> create(const MailStorageInfo& info, [[maybe_unused]] std::string_view name);
+	static inline void setDefaultPath(std::filesystem::path p) { defaultPath = p; }
 private:
-	void setDefaultPath();
-
-	std::filesystem::path mailStoragePath;
-	const char* defaultMiddlePartOfPath{ "mailboxes" };
+	static std::filesystem::path defaultPath;
 };
 

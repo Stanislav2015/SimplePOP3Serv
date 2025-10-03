@@ -4,6 +4,8 @@
 #include <fstream>
 #include <sstream>
 
+std::filesystem::path FileSystemStorageFactory::defaultPath = "";
+
 #ifdef WIN32
 #include <ShlObj_core.h>
 #include <Windows.h>
@@ -62,22 +64,33 @@ FileSystemMailStorage::~FileSystemMailStorage() {
 	}
 }
 
-std::shared_ptr<FileSystemMailStorage> FileSystemStorageFactory::create(std::string_view mailboxName) const {
-	
-	std::filesystem::path mail_storage_directory = mailStoragePath;
-	mail_storage_directory /= mailboxName;
-	if (!std::filesystem::exists(mail_storage_directory)) {
-		if (!std::filesystem::create_directory(mail_storage_directory)) {
+std::shared_ptr<FileSystemMailStorage> FileSystemStorageFactory::create(const MailStorageInfo& info, 
+	[[maybe_unused]] std::string_view name)  
+{
+	std::filesystem::path path;
+	for (unsigned int i = 0; i < info.count; i++) {
+		if (info[i].name == Option::name_type("path")) {
+			path = std::get<std::string>(info[i].value);
+		}
+	}
+
+	if (path.empty()) {
+		path = defaultPath / name;
+	}
+
+	if (!std::filesystem::exists(path)) {
+		if (!std::filesystem::create_directory(path)) {
 			throw std::exception{ "Failed to create mailbox directory" };
 		}
 	}
 
 	std::vector<std::filesystem::path> emails;
-	std::copy_if(std::filesystem::directory_iterator(mail_storage_directory), std::filesystem::directory_iterator{},
+	std::copy_if(std::filesystem::directory_iterator(path), std::filesystem::directory_iterator{},
 		std::back_inserter(emails), [](const auto& path) { return std::filesystem::is_regular_file(path); });
 	return std::make_shared<FileSystemMailStorage>(emails);
 }
 
+/*
 void FileSystemStorageFactory::setDefaultPath() {
 #ifdef WIN32
 	PWSTR homeDir = nullptr;
@@ -89,3 +102,4 @@ void FileSystemStorageFactory::setDefaultPath() {
 	mailStoragePath = homeDir;
 #endif
 }
+*/

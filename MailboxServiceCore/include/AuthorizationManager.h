@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Info.h"
+#include "ConsumerInfo.h"
 #include <variant>
 
 class AuthorizationManager
@@ -38,43 +38,86 @@ protected:
 		return true; 
 	}
 
-	std::vector<MailStorageInfo> getMailStoragesAssociatedWithConsumer(std::string_view name) const override {
+	std::vector<MailStorageInfo> getMailStoragesAssociatedWithConsumer(std::string_view name) const override 
+	{	
 		std::vector<MailStorageInfo> vec;
 
 		{
-			std::map<std::string, std::string> fileSystemStorageOptions;
-			vec.emplace_back(StorageType::FileSystemMailStorage, std::move(fileSystemStorageOptions));
+			MailStorageInfo info(StorageType::FileSystemMailStorage);
+			vec.push_back(info);
 		}
 
 		return vec;
 	}
 };
 
+template<typename ConsumerInfoType>
 class SingleConsumerInfoStorageAuthorizationManager : public AuthorizationManager
 {
 public:
-	SingleConsumerInfoStorageAuthorizationManager(std::unique_ptr<ConsumerInfoStorage> ptr) : storage(std::move(ptr)) {}
+
+	SingleConsumerInfoStorageAuthorizationManager(std::unique_ptr<ConsumerInfoStorage<ConsumerInfoType>> ptr) : storage(std::move(ptr)) {}
 
 	bool verifyName(std::string_view name) const override {
 		assert(storage);
-		return storage->hasMailbox(name);
+		if constexpr (std::is_integral_v<ConsumerInfoType::_NameType>) {
+			constexpr static auto nameConv = compact_string::string_view_hash_converter();
+			return storage->hasMailbox(nameConv(name));
+		}
+		else {
+			constexpr static auto nameConv = compact_string::compact_string_converter<ConsumerInfoType::_NameType::const_size>>();
+			return storage->hasMailbox(nameConv(name));
+		}
 	}
 
 private:
 	bool verifyCredentials(std::string_view name, std::string_view password) const override {
 		assert(storage);
-		auto settings = storage->getConsumerInfo(name);
-		return settings && settings->password == password;
+		if constexpr (std::is_integral_v<ConsumerInfoType::_NameType>) {
+			constexpr static auto nameConv = compact_string::string_view_hash_converter();
+			auto settings = storage->getConsumerInfo(nameConv(name));
+			if constexpr (std::is_integral_v<ConsumerInfoType::_PasswordType>) {
+				constexpr static auto passConv = compact_string::string_view_hash_converter();
+				return settings && settings->password == passConv(password);
+			}
+			else {
+				constexpr static auto passConv = compact_string::compact_string_converter<ConsumerInfoType::_PasswordType::const_size>>();
+				return settings && settings->password == passConv(password);
+			}
+		}
+		else {
+			constexpr static auto nameConv = compact_string::compact_string_converter<ConsumerInfoType::_NameType::const_size>();
+			auto settings = storage->getConsumerInfo(nameConv(name));
+			if constexpr (std::is_integral_v<ConsumerInfoType::_PasswordType>) {
+				constexpr static auto passConv = compact_string::string_view_hash_converter();
+				return settings && settings->password == passConv(password);
+			}
+			else {
+				constexpr static auto passConv = compact_string::compact_string_converter<ConsumerInfoType::_PasswordType::const_size >> ();
+				return settings && settings->password == passConv(password);
+			}
+		}
 	}
 
 	std::vector<MailStorageInfo> getMailStoragesAssociatedWithConsumer(std::string_view name) const override {
 		assert(storage);
-		auto settings = storage->getConsumerInfo(name);
-		if (!settings) {
-			return std::vector<MailStorageInfo>();
+		if constexpr (std::is_integral_v<ConsumerInfoType::_NameType>) {
+			constexpr static auto nameConv = compact_string::string_view_hash_converter();
+			auto settings = storage->getConsumerInfo(nameConv(name));
+			if (!settings) {
+				return std::vector<MailStorageInfo>();
+			}
+			return settings->storages;
 		}
-		return settings->storages;
+		else {
+			constexpr static auto nameConv = compact_string::compact_string_converter<ConsumerInfoType::_NameType::const_size>();
+			auto settings = storage->getConsumerInfo(nameConv(name));
+			if (!settings) {
+				return std::vector<MailStorageInfo>();
+			}
+			return settings->storages;
+		}
 	}
 
-	std::unique_ptr<ConsumerInfoStorage> storage;
+	std::unique_ptr<ConsumerInfoStorage<ConsumerInfoType>> storage;
 };

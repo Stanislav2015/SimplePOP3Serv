@@ -46,7 +46,7 @@ std::variant<mailbox_ptr, MailboxOperationError, AuthError> MailboxServiceManage
 					try {
 						switch (storageDescription.storageType) {
 						case StorageType::FileSystemMailStorage: {
-							storages.push_back(FileSystemStorageFactory(storageDescription.options).create(mailboxName));
+							storages.push_back(FileSystemStorageFactory::create(storageDescription, mailboxName));
 							break;
 						}
 						default:
