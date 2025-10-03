@@ -6,6 +6,7 @@
 #include <boost/asio.hpp>
 #include <boost/lexical_cast.hpp>
 
+
 #include "POP3Command.h"
 #include "Enums.h"
 #include "Mailbox.h"
@@ -68,12 +69,16 @@ inline std::ostream& operator<<(std::ostream& out, const POP3SessionError& err) 
 class POP3Session : public std::enable_shared_from_this<POP3Session>
 {
 public:
+	constexpr static boost::asio::chrono::minutes Timeout = boost::asio::chrono::minutes(1);
 
-	explicit POP3Session(boost::asio::ip::tcp::socket socket) : sessionId{ counter++ }, socket{ std::move(socket) }, mailbox{} {
+	explicit POP3Session(boost::asio::ip::tcp::socket socket, boost::asio::steady_timer timer) : sessionId{ counter++ },
+		socket(std::move(socket)), timer(std::move(timer)),
+		mailbox{}, lastActivityTime(boost::asio::chrono::steady_clock::now())
+	{
 		//nothing
 	}
 
-	static std::shared_ptr<POP3Session> createSession(boost::asio::ip::tcp::socket socket);
+	static std::shared_ptr<POP3Session> CreateSession(boost::asio::ip::tcp::socket socket, boost::asio::steady_timer timer);
 
 	void read() {
 		boost::asio::async_read_until(socket, boost::asio::dynamic_buffer(request), "\r\n", 
@@ -84,7 +89,7 @@ public:
 				//TODO: Что-то делать с ошибками
 				return;
 			}
-
+			self->prolongateLifeTime();
 			self->readImpl();
 		});
 	}
@@ -110,19 +115,39 @@ public:
 		});
 	}
 
-	~POP3Session() {
-		if (mailbox) {
-			// need to set free
-			//mailboxServManager->releaseMailbox(mailbox->getName());
-		}
+	inline void startTimer() { 
+		timer.async_wait([self = shared_from_this()](boost::system::error_code ec){
+			if (!ec) {
+				//time expired
+				if ((boost::asio::chrono::steady_clock::now() - self->lastActivityTime) > Timeout) {
+					//client does not reponse too long
+					self->socket.cancel();
+				}
+				else {
+					self->timer.expires_after(Timeout);
+					self->startTimer();
+				}
+			}
+			else if (ec == boost::asio::error::operation_aborted) {
+				//operation was canceled, do nothing
+			}
+			else {
+				self->startTimer();
+			}
+		});
 	}
+
+	~POP3Session() {}
 
 	/// <summary>
 	/// Cancel all sessions
 	/// </summary>
 	static void cancelAll();
+	static void cancelParticular(std::size_t id);
 
 private:
+	
+
 	template<typename Err>
 	void setErrorResponse(Err err);
 	
@@ -136,6 +161,10 @@ private:
 	void handleAnonymousCommand(const POP3Command& cmd);
 	void handleAuthorizedUserCommand(const POP3Command& cmd);
 
+	inline void prolongateLifeTime() {
+		lastActivityTime = boost::asio::chrono::steady_clock::now();
+	}
+
 	//static
 	static std::list<std::shared_ptr<POP3Session>> sessions;
 	static std::mutex m_mutex;
@@ -145,6 +174,7 @@ private:
 
 	POP3SessionState state{POP3SessionState::Authorization};
 	boost::asio::ip::tcp::socket socket;
+	boost::asio::steady_timer timer;
 	std::string request;
 	std::string response;
 	std::string userName;
@@ -153,4 +183,5 @@ private:
 	mailbox_ptr mailbox;
 	static std::atomic<std::size_t> counter;
 	std::size_t sessionId;
+	boost::asio::chrono::steady_clock::time_point lastActivityTime;
 };

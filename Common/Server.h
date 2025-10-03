@@ -2,12 +2,15 @@
 
 #include <memory>
 #include <boost/asio.hpp>
+#include <boost/asio/steady_timer.hpp>
 
 template<typename SessionType>
 class Server {
 	using ServerImpl = Server<SessionType>;
 public:
-	Server(boost::asio::ip::tcp::acceptor acceptor) : acceptor(std::move(acceptor)) {
+	Server(boost::asio::io_context& context, boost::asio::ip::tcp::acceptor acceptor) : 
+		io_context(context), acceptor(std::move(acceptor))
+	{
 	}
 
 	void serve() {
@@ -20,8 +23,10 @@ public:
 				if (ec) {
 					return;
 				}
-				auto session = SessionType::createSession(std::move(socket));
+				boost::asio::steady_timer timer(io_context, SessionType::Timeout);
+				auto session = SessionType::CreateSession(std::move(socket), std::move(timer));
 				session->read();
+				session->startTimer();
 			});
 	}
 
@@ -31,6 +36,7 @@ public:
 	}
 
 private:
+	boost::asio::io_context& io_context;
 	boost::asio::ip::tcp::acceptor acceptor;
 };
 
@@ -43,11 +49,11 @@ public:
 		if (!addr.empty()) {
 			auto adr = boost::asio::ip::make_address(addr);
 			boost::asio::ip::tcp::acceptor acceptor(context, boost::asio::ip::tcp::endpoint(adr, port_number));
-			return ServerType(std::move(acceptor));
+			return ServerType(context, std::move(acceptor));
 		}
 		else {
 			boost::asio::ip::tcp::acceptor acceptor(context, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port_number));
-			return ServerType(std::move(acceptor));
+			return ServerType(context, std::move(acceptor));
 		}
 	}
 private:

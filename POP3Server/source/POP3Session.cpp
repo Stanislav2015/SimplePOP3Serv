@@ -10,9 +10,9 @@ std::atomic<std::size_t> POP3Session::counter = 0;
 std::list<std::shared_ptr<POP3Session>> POP3Session::sessions;
 std::mutex POP3Session::m_mutex;
 
-std::shared_ptr<POP3Session> POP3Session::createSession(boost::asio::ip::tcp::socket socket) {
+std::shared_ptr<POP3Session> POP3Session::CreateSession(boost::asio::ip::tcp::socket socket, boost::asio::steady_timer timer) {
 
-	auto session = std::make_shared<POP3Session>(std::move(socket));
+	auto session = std::make_shared<POP3Session>(std::move(socket), std::move(timer));
 
 	{
 		std::lock_guard<std::mutex> lg{ m_mutex };
@@ -35,7 +35,22 @@ void POP3Session::cancelAll() {
 	std::lock_guard<std::mutex> lg{ m_mutex };
 	std::for_each(sessions.cbegin(), sessions.cend(), [](const auto& session) {
 		session->socket.cancel();
+		session->timer.cancel();
 	});
+}
+
+void POP3Session::cancelParticular(std::size_t id)
+{
+	std::lock_guard<std::mutex> lg{ m_mutex };
+	auto it = std::find_if(sessions.cbegin(), sessions.cend(), [&id](const auto& session) {
+		return session->sessionId == id;
+	});
+	assert(it != sessions.cend());
+	if (it != sessions.cend()) {
+		sessions.erase(it);
+	}
+	(*it)->socket.cancel();
+	(*it)->timer.cancel();
 }
 
 template<typename Err>
