@@ -21,12 +21,12 @@ enum class POP3SessionState
 };
 
 enum class POP3SessionError {
-	CommandNotAllowedForAnonymous,
-	MailboxNotFound,
+	ProhibitedForAnonymous,
+	NotRegistered,
 	MailboxIsBusy,
 	InternalError,
-	OtherUserIsLoggedNow,
-	MailboxAlreadyUsed,
+	OtherMailboxBeingUsed,
+	AlreadyLogged,
 	NoSuchMessage,
 	MessageAlreadyDeleted
 };
@@ -35,10 +35,10 @@ inline std::ostream& operator<<(std::ostream& out, const POP3SessionError& err) 
 	std::string message;
 	switch (err)
 	{
-	case POP3SessionError::CommandNotAllowedForAnonymous: 
+	case POP3SessionError::ProhibitedForAnonymous: 
 		message = "you must authorized before calling this command";
 		break;
-	case POP3SessionError::MailboxNotFound:
+	case POP3SessionError::NotRegistered:
 		message = "sorry, no mailbox for such user here";
 		break;
 	case POP3SessionError::MailboxIsBusy:
@@ -47,10 +47,10 @@ inline std::ostream& operator<<(std::ostream& out, const POP3SessionError& err) 
 	case POP3SessionError::InternalError:
 		message = "some internal error occured, please try again later";
 		break;
-	case POP3SessionError::OtherUserIsLoggedNow:
+	case POP3SessionError::OtherMailboxBeingUsed:
 		message = "you have already logged using other name, please quit from mailbox and then try again";
 		break;
-	case POP3SessionError::MailboxAlreadyUsed:
+	case POP3SessionError::AlreadyLogged:
 		message = "maildrop already locked";
 		break;
 	case POP3SessionError::NoSuchMessage:

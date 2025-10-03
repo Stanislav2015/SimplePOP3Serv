@@ -78,7 +78,7 @@ void POP3Session::handleAnonymousCommand(const POP3Command& cmd) {
 	case POP3CommandType::USER: {
 		auto username = std::get<std::string>(cmd.parameter);
 		if (!MailboxServiceManager::VerifyName(username)) {
-			setErrorResponse(POP3SessionError::MailboxNotFound);
+			setErrorResponse(POP3SessionError::NotRegistered);
 		}
 		else {
 			userName = username;
@@ -122,7 +122,7 @@ void POP3Session::handleAnonymousCommand(const POP3Command& cmd) {
 	}
 	default:
 		//Not allowed for anonymous
-		setErrorResponse(POP3SessionError::CommandNotAllowedForAnonymous);
+		setErrorResponse(POP3SessionError::ProhibitedForAnonymous);
 		return;
 	}
 }
@@ -223,12 +223,12 @@ void POP3Session::handleAuthorizedUserCommand(const POP3Command& cmd) {
 			response = ss.str();
 		}
 		else {
-			setErrorResponse(POP3SessionError::OtherUserIsLoggedNow);
+			setErrorResponse(POP3SessionError::OtherMailboxBeingUsed);
 		}
 		break;
 	}
 	case POP3CommandType::PASS: {
-		setErrorResponse(POP3SessionError::MailboxAlreadyUsed);
+		setErrorResponse(POP3SessionError::AlreadyLogged);
 		break;
 	}
 	case POP3CommandType::QUIT: {
